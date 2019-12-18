@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t rivtam/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true rivtam/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t rivtam/multi-client ./client
+  - docker build -t rivtam/multi-nginx ./nginx
+  - docker build -t rivtam/multi-server ./server
+  - docker build -t rivtam/multi-worker ./worker
+  # docker login to CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Push images to docker hub
+  - docker push rivtam/multi-client
+  - docker push rivtam/multi-nginx
+  - docker push rivtam/multi-server
+  - docker push rivtam/multi-worker
